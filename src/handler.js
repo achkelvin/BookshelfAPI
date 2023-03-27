@@ -27,6 +27,7 @@ const addBookHandler = (request, h) => {
     readPage,
     reading,
     id,
+    finished,
     insertedAt,
     updatedAt,
   };
@@ -78,21 +79,19 @@ const getAllBooksHandler = (request, h) => {
   const { name, reading, finished } = request.query;
   let filteredBooks = books;
 
-  if (name !== undefined) {
-    filteredBooks = filteredBooks.filter((book) =>
-      book.name.toLowerCase().includes(name.toLowerCase())
+  if (name) {
+    filteredBooks = books.filter((book) => book.name.toLowerCase().includes(name.toLowerCase()));
+  }
+
+  if (reading) {
+    filteredBooks = books.filter(
+      (book) => Number(book.reading) === Number(reading),
     );
   }
 
-  if (reading !== undefined) {
-    filteredBooks = filteredBooks.filter(
-      (book) => book.reading === (reading === '1')
-    );
-  }
-
-  if (finished !== undefined) {
-    filteredBooks = filteredBooks.filter(
-      (book) => book.finished === (finished === '1')
+  if (finished) {
+    filteredBooks = books.filter(
+      (book) => Number(book.finished) === Number(finished),
     );
   }
 
@@ -112,7 +111,7 @@ const getAllBooksHandler = (request, h) => {
 
 const getBookByIdHandler = (request, h) => {
   const { bookId } = request.params;
-  const book = books.filter((n) => n.id === bookId)[0];
+  const book = books.filter((b) => b.id === bookId)[0];
 
   if (book !== undefined) {
     return {
@@ -145,6 +144,25 @@ const editBookByIdHandler = (request, h) => {
   } = request.payload;
   const updatedAt = new Date().toISOString();
   const finished = pageCount === readPage;
+
+  if (name === undefined) {
+    const response = h.response({
+      status: 'fail',
+      message: 'Gagal memperbarui buku. Mohon isi nama buku',
+    });
+    response.code(400);
+    return response;
+  }
+
+  if (readPage > pageCount) {
+    const response = h.response({
+      status: 'fail',
+      message:
+        'Gagal memperbarui buku. readPage tidak boleh lebih besar dari pageCount',
+    });
+    response.code(400);
+    return response;
+  }
 
   const index = books.findIndex((book) => book.id === bookId);
 
